@@ -33,7 +33,7 @@ user_id=$(echo "${user_json}" | jq --raw-output '.id')
 curl -s -X POST \
   --header "PRIVATE-TOKEN: ${GITLAB_API_TOKEN}" \
   --header "Content-Type: application/json" \
-  --data '{"name": "'"${group_name^}"'", "path": "'"${group_name,,}"'", "visibility": "public"}' \
+  --data '{"name": "'"${group_name^}"'", "path": "'"${group_name,,}"'", "visibility": "public", "auto_devops_enabled": false}' \
   "${GITLAB_URL}/api/v4/groups/" 2>&1 >/dev/null
 
 group_json=$(curl -s -X GET \
@@ -44,14 +44,14 @@ group_id=$(echo "${group_json}" | jq '.id')
 
 curl -s -X POST \
   --header "PRIVATE-TOKEN: ${GITLAB_API_TOKEN}" \
-  --data "user_id=${user_id}&access_level=50" \
+  --data "user_id=${user_id}&access_level=30" \
   "${GITLAB_URL}/api/v4/groups/${group_id}/members" 2>&1 >/dev/null
 
 for project_name in bar baz ; do
   curl -s -X POST \
     --header "PRIVATE-TOKEN: ${GITLAB_API_TOKEN}" \
     --header "Content-Type: application/json" \
-    --data '{ "name": "'"${project_name^}"'", "path": "'"${project_name,,}"'", "namespace_id": "'"${group_id}"'", "visibility": "public", "import_url": "https://github.com/ericcitaire/ready2use-gitlab.git"}' \
+    --data '{ "name": "'"${project_name^}"'", "path": "'"${project_name,,}"'", "namespace_id": "'"${group_id}"'", "visibility": "public", "import_url": "https://github.com/ericcitaire/ready2use-gitlab.git", "analytics_access_level": "disabled", "builds_access_level": "disabled", "container_registry_access_level": "disabled", "forking_access_level": "disabled", "issues_access_level": "disabled", "merge_requests_access_level": "disabled", "operations_access_level": "disabled", "pages_access_level": "disabled", "repository_access_level": "enabled", "requirements_access_level": "disabled", "security_and_compliance_access_level": "disabled", "snippets_access_level": "disabled", "wiki_access_level": "disabled"}' \
     "${GITLAB_URL}/api/v4/projects/" 2>&1 >/dev/null
 done
 
