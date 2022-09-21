@@ -26,7 +26,7 @@ EOF
 }
 
 gitlab_user=root
-gitlab_password=initialpassword
+gitlab_password=training
 rm -f cookies.txt
 curl -s -c cookies.txt "${GITLAB_URL}" 2>&1 >/dev/null
 
