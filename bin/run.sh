@@ -1,8 +1,12 @@
 #!/bin/bash
 
+# CHANGE IT !!
+fqdn=gitlab.example.com
+
 # https://gitlab.com/gitlab-org/omnibus-gitlab/-/raw/master/files/gitlab-config-template/gitlab.rb.template
-read -r -d '' GITLAB_OMNIBUS_CONFIG <<'EOF'
-gitlab_rails['initial_root_password'] = "training";
+read -r -d '' GITLAB_OMNIBUS_CONFIG << EOF
+external_url "https://$fqdn"
+gitlab_rails["initial_root_password"] = "training";
 EOF
 
 export GITLAB_OMNIBUS_CONFIG
