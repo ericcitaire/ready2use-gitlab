@@ -20,13 +20,13 @@ create_user() {
   curl -s -X POST \
     --header "PRIVATE-TOKEN: ${GITLAB_API_TOKEN}" \
     --header "Content-Type: application/json" \
-    --data '{ "email": "'"${user_email}"'", "name": "'"${user_name^}"'", "username": "'"${user_name,,}"'", "password": "'"${user_password}"'", "skip_confirmation": true}' \
+    --data '{ "email": "'"${user_email}"'", "name": "'"${user_name^}"'", "username": "'"${user_email/@*/}"'", "password": "'"${user_password}"'", "skip_confirmation": true}' \
     "${GITLAB_URL}/api/v4/users/" 2>&1 >/dev/null
 
   curl -s -X GET \
     --header "PRIVATE-TOKEN: ${GITLAB_API_TOKEN}" \
     "${GITLAB_URL}/api/v4/users" \
-    | jq --arg user_name "${user_name,,}" --raw-output '.[] | select(.username == $user_name)'
+    | jq --arg user_email "${user_email}" --raw-output '.[] | select(.email == $user_email)'
 }
 
 greate_group() {
@@ -54,10 +54,11 @@ add_group_member() {
 import_project() {
   namespace_id="$1"
   project_name="$2"
+  project_url="$3"
   curl -s -X POST \
     --header "PRIVATE-TOKEN: ${GITLAB_API_TOKEN}" \
     --header "Content-Type: application/json" \
-    --data '{ "name": "'"${project_name^}"'", "path": "'"${project_name,,}"'", "namespace_id": "'"${namespace_id}"'", "visibility": "public", "import_url": "https://github.com/ericcitaire/ready2use-gitlab.git", "analytics_access_level": "disabled", "builds_access_level": "disabled", "container_registry_access_level": "disabled", "forking_access_level": "disabled", "issues_access_level": "disabled", "merge_requests_access_level": "disabled", "operations_access_level": "disabled", "pages_access_level": "disabled", "repository_access_level": "enabled", "requirements_access_level": "disabled", "security_and_compliance_access_level": "disabled", "snippets_access_level": "disabled", "wiki_access_level": "disabled"}' \
+    --data '{ "name": "'"${project_name^}"'", "path": "'"${project_name,,}"'", "namespace_id": "'"${namespace_id}"'", "visibility": "public", "import_url": "'"${project_url}"'", "analytics_access_level": "disabled", "builds_access_level": "disabled", "container_registry_access_level": "disabled", "forking_access_level": "disabled", "issues_access_level": "disabled", "merge_requests_access_level": "disabled", "operations_access_level": "disabled", "pages_access_level": "disabled", "repository_access_level": "enabled", "requirements_access_level": "disabled", "security_and_compliance_access_level": "disabled", "snippets_access_level": "disabled", "wiki_access_level": "disabled"}' \
     "${GITLAB_URL}/api/v4/projects/" 2>&1 >/dev/null
 }
 
@@ -66,7 +67,6 @@ user_names=(student1 student2 student3 student4)
 user_emails=(student1@home.net student2@home.net student3@home.net student4@home.net)
 for (( i=0; i<${#user_names[@]} ; i+=1 )) ; do
   namespace_id=$(create_user "${user_emails[i]}" "${user_names[i]}" "training" | jq --raw-output '.namespace_id')
-  for project_name in bar baz ; do
-    import_project "${namespace_id}" "${project_name}"
-  done
+  import_project "${namespace_id}" "Maven" https://github.com/ericcitaire/example-maven-project.git
+  import_project "${namespace_id}" "Node" https://github.com/ericcitaire/example-node-project.git
 done
