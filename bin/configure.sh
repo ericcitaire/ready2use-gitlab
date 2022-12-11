@@ -44,7 +44,7 @@ create_user() {
   http_get '/api/v4/users' | jq --arg user_email "${user_email}" --raw-output '.[] | select(.email == $user_email)'
 }
 
-greate_group() {
+create_group() {
   group_name="$1"
 
   http_post \
@@ -58,9 +58,10 @@ add_group_member() {
   group_id="$1"
   user_id="$2"
 
-  http_post \
-      "/api/v4/groups/${group_id}/members" \
-      "user_id=${user_id}&access_level=30" \
+  curl -fs -X POST \
+      --header "PRIVATE-TOKEN: ${GITLAB_API_TOKEN}" \
+      --data "user_id=${user_id}&access_level=30" \
+      "${GITLAB_URL}/api/v4/groups/${group_id}/members" \
       2>&1 >/dev/null
 }
 
@@ -75,14 +76,25 @@ import_project() {
       2>&1 >/dev/null
 }
 
+group_names=(st1 st2)
 user_names=(student1 student2)
 user_emails=(student1@home.net student2@home.net)
 
 for (( i=0; i<${#user_names[@]} ; i+=1 )) ; do
   echo -n "Creating user ${user_names[i]}..."
   user_info=$(create_user "${user_emails[i]}" "${user_names[i]}" "training")
-  namespace_id=$(echo "${user_info}" | jq --raw-output '.namespace_id')
-  import_project "${namespace_id}" "Maven" https://github.com/ericcitaire/example-maven-project.git
-  import_project "${namespace_id}" "Node" https://github.com/ericcitaire/example-node-project.git
+  # namespace_id=$(echo "${user_info}" | jq --raw-output '.namespace_id')
+  # import_project "${namespace_id}" "Maven" https://github.com/ericcitaire/example-maven-project.git
+  # import_project "${namespace_id}" "Node" https://github.com/ericcitaire/example-node-project.git
+  user_id=$(echo "${user_info}" | jq --raw-output '.id')
+  echo " OK"
+  echo -n "Creating group ${group_names[i]}..."
+  group_info=$(create_group "${group_names[i]}")
+  group_id=$(echo "${group_info}" | jq '.id')
+  import_project "${group_id}" "Maven" https://github.com/ericcitaire/example-maven-project.git
+  import_project "${group_id}" "Node" https://github.com/ericcitaire/example-node-project.git
+  echo " OK"
+  echo -n "Adding ${user_names[i]} (id ${user_id}) to group ${group_names[i]} (id ${group_id})..."
+  add_group_member "${group_id}" "${user_id}"
   echo " OK"
 done
